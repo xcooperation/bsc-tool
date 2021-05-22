@@ -1,0 +1,8 @@
+.App-logo {
+  height: 3vmin;
+  pointer-events: none;
+}
+
+.nav-item {
+  text-transform: capitalize;
+}
