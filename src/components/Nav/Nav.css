@@ -6,3 +6,8 @@
 .nav-item {
   text-transform: capitalize;
 }
+
+li.nav-link.active {
+  background-color: #fff;
+  color: #333 !important;
+}

@@ -1,10 +1,12 @@
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { useDropzone } from "react-dropzone"
+import {useBscContext} from '../../../context/BscContext'
 import {baseStyle, activeStyle, acceptStyle, rejectStyle} from './Style'
 import {readExcelFile, checkFileExtension} from './Event'
 
 
 export default function DropZone({setData, setGenerated}) {
+  const {storeData} = useBscContext()
   const {
     getRootProps,
     getInputProps,
@@ -19,6 +21,7 @@ export default function DropZone({setData, setGenerated}) {
     validator: checkFileExtension,
     onDropAccepted: async (acceptedFiles) => {
       const wsJsonData = await readExcelFile(acceptedFiles)
+      storeData(wsJsonData)
       setData(wsJsonData)
       setGenerated(true)
     }

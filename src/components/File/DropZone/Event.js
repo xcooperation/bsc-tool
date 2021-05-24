@@ -1,4 +1,6 @@
 import XLSX from "xlsx"
+
+// Check file extension of the input file
 export const checkFileExtension = function (file) {
   if (
     file.type !== "application/vnd.ms-excel" &&
@@ -13,6 +15,7 @@ export const checkFileExtension = function (file) {
   return null
 }
 
+// Read data from the excel file
 export const readExcelFile = async ([file]) => {
   const promise = new Promise((resolve, reject) => {
     var reader = new FileReader()
@@ -27,7 +30,7 @@ export const readExcelFile = async ([file]) => {
         const worksheet = workbook.Sheets[worksheetName]
         const worksheetJSON = XLSX.utils.sheet_to_json(worksheet)
         
-        localStorage.setItem("excel-data", JSON.stringify(worksheetJSON))
+        // localStorage.setItem("excel-data", JSON.stringify(worksheetJSON))
         resolve(worksheetJSON)
     }
 

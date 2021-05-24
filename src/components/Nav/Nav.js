@@ -1,14 +1,27 @@
-import logo from '../../logo.svg';
-import {Link} from 'react-router-dom'
+import logo from "../../logo.svg"
+import { Link } from "react-router-dom"
+import { useGlobalContext } from "../../context/GlobalContext"
 
-import {useGlobalContext} from '../../context/GlobalContext'
+import NavLink from "./NavLink"
 
-import NavLink from './NavLink'
-
-import './Nav.css'
+import "./Nav.css"
 
 export default function Nav() {
-  const {navLinks, activeNav} = useGlobalContext()
+  const { navLinks, activeNav, setActiveNav } = useGlobalContext()
+
+  // Switch route
+  const switchRoute = (link) => {
+    setActiveNav(link)
+    navLinks.forEach(nav => {
+      const linkElement = document.querySelector(`#route-${nav}`)
+      
+      if (nav === activeNav) {
+        linkElement.classList.add("active")
+      } else if (linkElement.classList.contains("active")){
+        linkElement.classList.remove("active")
+      }
+    })
+  }
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -29,14 +42,17 @@ export default function Nav() {
         </button>
         <div className="collapse navbar-collapse" id="navbarNavDropdown">
           <ul className="navbar-nav">
-            {navLinks.map((link, index) => 
+            {navLinks.map((link, index) => (
               <NavLink
-                key = {index}
-                name = {link}
-                to = {`/${link}`}
-                active = {(activeNav) ? true : false}
-              />
-            )}</ul>
+                id={`route-${link}`}
+                key={index} 
+                name={link} 
+                to={`/${link}`} 
+                active={activeNav === link ? true : false} 
+                switchRoute={e => switchRoute(link)}
+                />
+            ))}
+          </ul>
         </div>
       </div>
     </nav>
