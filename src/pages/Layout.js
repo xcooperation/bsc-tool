@@ -4,7 +4,7 @@ import { GlobalProvider } from "../context/GlobalContext"
 import { BscProvider } from "../context/BscContext"
 // Pages
 import Home from "./Home"
-import Wallet from "./Wallet"
+import Wallet from "./Wallet/Wallet"
 
 export default function Layout() {
   return (
