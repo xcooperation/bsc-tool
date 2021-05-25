@@ -13,8 +13,13 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     storeData,
     resultStorageName,
     sendBNB,
+    sendBEP20,
     checkBnbBalance,
+    checkBep20Balance,
     getBalanceBnb,
+    getBalanceBep20,
+    calculateBEP20Fee,
+    convertToToken
   } = useBscContext()
   const [error, setError] = useState("")
   const [isValid, setIsValid] = useState(false)
@@ -28,9 +33,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     const { wallet_address_inp } = e.target.elements
     const wallet_address = wallet_address_inp.value
 
-    const valid = validateWallet(wallet_address)
-
-    if (!valid) {
+    if (!web3.utils.isAddress(wallet_address)) {
       return setError(error)
     }
 
@@ -39,13 +42,13 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     setIsValid(true)
   }
 
-  // Validate
-  async function validation(wallet, amountOfEther) {
+  // BNB Validation
+  async function bnbValidation(wallet, amountOfEther) {
     try {
-      // Check format address
-      const validFormat = validateWallet(wallet.address)
-      if (!validFormat) {
-        return { error: "Invalid address." }
+      // Check address
+      const {error: invalidFormat} = validateWallet(wallet.address, mainWallet.address)
+      if (invalidFormat) {
+        return { error: invalidFormat }
       }
 
       // Check balance bnb of clone wallet
@@ -60,6 +63,48 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     }
   }
 
+  // BEP20 Validation
+  async function bep20Validation (wallet, amountOfEther) {
+    try {
+      // Check address
+      const {error: invalidFormat} = validateWallet(wallet.address, mainWallet.address)
+      if (invalidFormat) {
+        return { error: invalidFormat }
+      }
+
+      // Get balance Bnb
+      const {error: bnbError} = await getBalanceBnb(wallet.address)
+      if (bnbError) {
+        return {error: bnbError}
+      }
+
+      // Get gas price
+      const gasFee = await calculateBEP20Fee(token, wallet, mainWallet.address, amountOfEther)
+      
+      // Check balanceBnb >  gas Fee
+      const {error: invalidBnb} = await checkBnbBalance(wallet, web3.utils.fromWei(gasFee.toString(), 'ether'))
+      if (invalidBnb) {
+        return {error: invalidBnb}
+      }
+
+      // Get balanceBep20
+      const {error: bep20Err} = await getBalanceBep20(wallet.address, token)
+      if(bep20Err) {
+        return {error: bep20Err}
+      }
+
+      // Check balanceBep20
+      const {error: invalidBep20} = await checkBep20Balance(wallet, amountOfEther, token)
+      if (invalidBep20) {
+        return {error: invalidBep20}
+      }
+      
+      return {valid: true}
+    } catch (error) {
+      return {error: error.message}
+    }
+  }
+
   // Collect BNB
   async function collectBnb(cloneWallet, amountOfEther, setMessage) {
     try {
@@ -71,10 +116,10 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // Validate
-      const { valid, error: invalidError } = await validation(cloneWallet, amountOfEther)
+      const { valid, error: invalidError } = await bnbValidation(cloneWallet, amountOfEther)
       if (invalidError || !valid) {
         setMessage(
-          `Collect ${amountOfEther} ${token} from ${cloneWallet.address}. --- [FAIL] ${invalidError}`
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. --- [FAIL] ${invalidError}`
         )
         return { ...cloneWallet, error: invalidError }
       }
@@ -87,26 +132,66 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       )
       if (txError) {
         setMessage(
-          `Collect ${amountOfEther} ${token} to ${cloneWallet.address}. --- [FAIL] ${txError}`
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. --- [FAIL] ${txError}`
         )
         return { ...cloneWallet, error: txError }
       }
 
-      console.log(txError, 3)
       // SUCCESS
       if (receipt) {
-        setMessage(`Collect ${amountOfEther} ${token} to ${cloneWallet.address}. -- [SUCCESS]`)
+        setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
         return { ...cloneWallet, hash: receipt.transactionHash }
       }
     } catch (err) {
       setMessage(
-        `Collect ${amountOfEther} ${token} to ${cloneWallet.address}. -- [FAIL] ${err.message}`
+        `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [FAIL] ${err.message}`
       )
       return { ...cloneWallet, error: err.message }
     }
   }
 
-  // [COLLECT]
+  // Collect BEP20
+  async function collectBep20(cloneWallet, amountOfEther, setMessage) {
+    try {
+      const { balanceBep20 } = await getBalanceBep20(cloneWallet.address, token)
+      if (balanceBep20) {
+        amountOfEther = amountOfEther
+          ? amountOfEther
+          : convertToToken(balanceBep20.toString(), token.decimal)
+      }
+      
+      // Validate
+      const { valid, error: invalidError } = await bep20Validation(cloneWallet, amountOfEther)
+      if (invalidError || !valid) {
+        setMessage(
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. --- [FAIL] ${invalidError}`
+        )
+        return { ...cloneWallet, error: invalidError }
+      }
+
+      // Send Bnb
+      const { receipt, error: txError } = await sendBEP20(cloneWallet, mainWallet.address, amountOfEther, token)
+      if (txError) {
+        setMessage(
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. --- [FAIL] ${txError}`
+        )
+        return { ...cloneWallet, error: txError }
+      }
+
+      // SUCCESS
+      if (receipt) {
+        setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
+        return { ...cloneWallet, hash: receipt.transactionHash }
+      }
+    } catch (err) {
+      setMessage(
+        `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [FAIL] ${err.message}`
+      )
+      return { ...cloneWallet, error: err.message }
+    }
+  }
+
+  // [BNB]
   async function collectBnbAll() {
     const collect = await Promise.all(
       data.map((sender, index) => {
@@ -123,15 +208,41 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     return collect
   }
 
+  // [BEP20]
+  async function collectBep20All() {
+    const collect = await Promise.all(
+      data.map((sender, index) => {
+        return new Promise((resolve) => {
+          setTimeout(async () => {
+            const resultData = await collectBep20(sender, sender.amount, setMessage)
+
+            return resolve(resultData)
+          }, 1000 * index)
+        })
+      })
+    )
+
+    return collect
+  }
+
   useEffect(() => {
     if (isValid) {
-      // [COLLECT]
-      collectBnbAll()
-        .then((dataArr) => {
-          storeData(dataArr, resultStorageName)
-          setStage("result")
-        })
-        .catch((e) => console.log(e))
+      if (token.symbol === 'BNB') {
+        // [BNB]
+        return collectBnbAll()
+          .then((dataArr) => {
+            storeData(dataArr, resultStorageName)
+            setStage("result")
+          })
+          .catch((e) => console.log(e))
+      }
+
+      // [BEP20]
+      collectBep20All().then((dataArr) => {
+        storeData(dataArr, resultStorageName)
+        setStage("result")
+      })
+      .catch((e) => console.log(e))
     }
   }, [isValid])
 

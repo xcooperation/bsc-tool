@@ -3,12 +3,6 @@ import Message from "./Message"
 
 export default function Logger({ messages, LoggerDiv }) {
   return (
-    // <ol>
-    //   {messages && messages.map((msg, index) => (
-    //     <Message key={index} message={msg} />
-    //   ))}
-    // </ol>
-
     <div style={{ overflowY: "scroll", maxHeight: "80vh" }} ref={LoggerDiv}>
       {
         <>

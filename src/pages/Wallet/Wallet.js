@@ -1,5 +1,6 @@
 import { useState } from "react"
-
+import {BNB} from '../../constant/BEP20'
+// Components
 import Generate from "./Generate"
 import Balance from "./Balance"
 import Spread from "./Spread"
@@ -13,7 +14,7 @@ const STAGES = ['generate', 'balance', 'spread', 'collect', 'result']
 export default function Wallet() {
   const [stage, setStage] = useState(STAGES[0])
   const [data, setData] = useState([])
-  const [token, setToken] = useState("BNB")
+  const [token, setToken] = useState(BNB)
   const [mainWallet, setMainWallet] = useState(null)
   const [amount, setAmount] = useState(0)
 

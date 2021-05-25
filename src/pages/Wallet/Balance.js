@@ -6,7 +6,7 @@ import Logger from '../../components/Logger/Logger'
 export default function Balance({ 
   data, token, setStage,
 }) {
-  const { getBalanceBnb, web3, storeData, resultStorageName } = useBscContext()
+  const { getBalanceBep20, getBalanceBnb, web3, storeData, resultStorageName, convertToToken } = useBscContext()
   const [messages, setMessages] = useState([])
   const [message, setMessage] = useState("")
   const LoggerDiv  = useRef()
@@ -26,7 +26,22 @@ export default function Balance({
     }
   }
 
-  // [BALANCE]
+  // Get balance Bep20
+  async function balanceBep20 (cloneWallet, setMessage) {
+    try {
+      const {balanceBep20: balance, error} = await getBalanceBep20(cloneWallet.address, token)
+      if (error) {
+        setMessage(`[${cloneWallet.address}] --- Failed to get balance`)
+      }
+      const convertedBalance = convertToToken(balance.toString(),token.decimal).toString()
+      setMessage(`[${cloneWallet.address}] --- ${convertedBalance} ${token.symbol}`)
+      return {...cloneWallet, [token.symbol]: convertedBalance}
+    } catch (error) {
+      return {error: error.message}
+    }
+  }
+
+  // [BALANCE - BNB]
   async function balanceBnbAll() {
     const balance = await Promise.all(data.map((sender, index) => {
       return new Promise((resolve) => {
@@ -41,9 +56,32 @@ export default function Balance({
     return balance
   }
 
+  // [BALANCE - BEP20]
+  async function balanceBep20All () {
+    const balance = await Promise.all(data.map((sender, index) => {
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          const resultData = await balanceBep20(sender, setMessage)
+          
+          return resolve(resultData)
+        }, 1000 * index)
+      })
+    }))
+
+    return balance
+  }
+
   useEffect(() => {
-    // [BALANCE]
-    balanceBnbAll().then(dataArr => {
+    if (token.symbol === 'BNB') {
+      // [BNB]
+      return balanceBnbAll().then(dataArr => {
+        storeData(dataArr, resultStorageName)
+        setStage('result')
+      }).catch(e => console.log(e))
+    }
+
+    // [BEP20]
+    return balanceBep20All().then(dataArr => {
       storeData(dataArr, resultStorageName)
       setStage('result')
     }).catch(e => console.log(e))

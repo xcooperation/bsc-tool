@@ -8,7 +8,8 @@ export default function DropdownBtn({ items, token, setToken, name, style }) {
 
   // handle select token
   const handleSelectToken = function(e) {
-    setToken(e.target.textContent)
+    const token = items.find(item => item.symbol === e.target.textContent)
+    setToken(token)
     handleDropdown()
   }
   return (
@@ -22,14 +23,14 @@ export default function DropdownBtn({ items, token, setToken, name, style }) {
         aria-expanded="false"
         onClick={handleDropdown}
       >
-        <span className="mr-2">{token ? `[${token}]` : ""}</span>
+        <span className="mr-2">{token ? `[${token.symbol}]` : ""}</span>
         <span className="ml-2 sr-only">Toggle Dropdown</span>
       </button>
       <div id={`${name}-dropdown`} className="dropdown-menu">
-        {items.map(item => {
+        {items.map((item, index) => {
           if (item.symbol === 'BNB') {
             return (<>
-            <span className="dropdown-item" onClick={handleSelectToken}>
+            <span key={index} className="dropdown-item" onClick={handleSelectToken}>
               {item.symbol}
             </span>
             <div className="dropdown-divider"></div>
@@ -37,7 +38,7 @@ export default function DropdownBtn({ items, token, setToken, name, style }) {
           }
 
           return (
-            <span className="dropdown-item" onClick={handleSelectToken}>
+            <span key={index} className="dropdown-item" onClick={handleSelectToken}>
               {item.symbol}
             </span>
           )

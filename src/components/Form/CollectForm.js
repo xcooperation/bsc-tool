@@ -9,7 +9,7 @@ export default function CollectForm({
   return (
     <>
       <div className="card-header">
-        Collect [{token}]
+        Collect [{token.symbol}]
       </div>
       <div className="card-body">
         {/* Generate */}

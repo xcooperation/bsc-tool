@@ -10,7 +10,7 @@ export default function SpreadForm({
   return (
     <>
       <div className="card-header">
-        Spread [{token}]
+        Spread [{token.symbol}]
       </div>
       <div className="card-body">
         {/* Generate */}
