@@ -76,34 +76,32 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
 
   // Spread BNB
   async function spreadBnb (cloneWallet, amountOfEther, setMessage) {
-    let error = null
-    let hash = null
     try {
       // Validate
       const {valid, error: invalidError} = await validation(cloneWallet, amountOfEther, 'spread')
       if (invalidError || !valid) {
-        error = invalidError
         setMessage(`Sending ${amountOfEther} ${token} to ${cloneWallet.address}. --- [FAIL] ${invalidError}`)
+        return {...cloneWallet, error: invalidError}
       }
       // Send Bnb
       const {receipt, error: txError} = await sendBNB(mainWallet, cloneWallet.address, amountOfEther)
       if (txError) {
-        error = txError
         setMessage(`Sending ${amountOfEther} ${token} to ${cloneWallet.address}. --- [FAIL] ${txError}`)
+        return {...cloneWallet, error: txError}
       }
 
       // SUCCESS
       if (receipt) {
         setMessage(`Sending ${amountOfEther} ${token} to ${cloneWallet.address}. -- [SUCCESS]`)
-        hash = receipt.transactionHash
+        return {...cloneWallet, hash: receipt.transactionHash}
+        
       }
 
     } catch (err) {
-      error = err.message
       setMessage(`Sending ${amountOfEther} ${token} to ${cloneWallet.address}. -- [FAIL] ${err.message}`)
+      return {...cloneWallet, error: err.message}
     }
     
-    return {...cloneWallet, error, hash}
   }
 
   // [SPREAD]

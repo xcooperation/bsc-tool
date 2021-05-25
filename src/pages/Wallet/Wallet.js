@@ -12,7 +12,6 @@ const STAGES = ['generate', 'balance', 'spread', 'collect', 'result']
 
 export default function Wallet() {
   const [stage, setStage] = useState(STAGES[0])
-  const [action, setAction] = useState(null)
   const [data, setData] = useState([])
   const [token, setToken] = useState("BNB")
   const [mainWallet, setMainWallet] = useState(null)
@@ -29,7 +28,6 @@ export default function Wallet() {
             token={token}
             setToken={setToken}
             setStage={setStage}
-            setAction={setAction}
           />
         )}
 

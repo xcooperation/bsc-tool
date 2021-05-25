@@ -1,51 +1,27 @@
-import {FaBuffer} from 'react-icons/fa'
+import { FaBuffer } from "react-icons/fa"
+import {BNB, DPC, SLC} from '../../constant/BEP20'
+import DropdownBtn from './DropdownBtn'
 
-export default function CollectBNBBtn({handler, token, setToken}) {
-  // handle dropdown
-  const handleDropdown = function() {
-    const dropdownDiv = document.querySelector("#collect-dropdown")
-    dropdownDiv.classList.toggle("d-block")
-  }
-
-  // handle select token
-  const handleSelectToken = function(e) {
-    setToken(e.target.textContent)
-    handleDropdown()
-  }
-
+export default function CollectBNBBtn({ handler, token, setToken }) {
   return (
     <div className="btn-group mr-2">
-      <button 
-        style={{backgroundColor: "#27aae3"}}
-        type="button" 
+      <button
+        style={{ backgroundColor: "#27aae3" }}
+        type="button"
         className="btn"
-        onClick={handler}>
+        onClick={handler}
+      >
         <FaBuffer className="mr-1" /> Collect
       </button>
-      
-      <button type="button"
-        style={{backgroundColor: "#03b1fc"}}
-        className="btn dropdown-toggle dropdown-toggle-split" 
-        data-toggle="dropdown" 
-        aria-haspopup="true" 
-        aria-expanded="false"
-        onClick={handleDropdown}>
-        <span className="mr-2">
-          {token ? `[${token}]` : ''}
-        </span>
-        <span className="ml-2 sr-only">Toggle Dropdown</span>
-      </button>
-      <div id="collect-dropdown" className="dropdown-menu">
-        <span 
-          className="dropdown-item" 
-          onClick={handleSelectToken}
-          to="#">BNB</span>
-        <div className="dropdown-divider"></div>
-        <span 
-          className="dropdown-item" 
-          onClick={handleSelectToken}
-          to="#">USDT</span>
-      </div>
+
+      <DropdownBtn
+        items={[BNB, DPC, SLC]}
+        token={token}
+        setToken={setToken}
+        handler={handler}
+        name="collect"
+        style={{ backgroundColor: "#03b1fc" }}
+      />
     </div>
   )
 }

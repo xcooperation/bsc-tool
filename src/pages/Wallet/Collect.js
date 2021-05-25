@@ -62,9 +62,6 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
 
   // Collect BNB
   async function collectBnb(cloneWallet, amountOfEther, setMessage) {
-    let error = null
-    let hash = null
-
     try {
       const { balanceBnb } = await getBalanceBnb(cloneWallet.address)
       if (balanceBnb) {
@@ -74,13 +71,14 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // Validate
-      const { valid, error: invalidError } = await validation(cloneWallet, amountOfEther, "collect")
+      const { valid, error: invalidError } = await validation(cloneWallet, amountOfEther)
       if (invalidError || !valid) {
-        error = invalidError
         setMessage(
           `Collect ${amountOfEther} ${token} from ${cloneWallet.address}. --- [FAIL] ${invalidError}`
         )
+        return { ...cloneWallet, error: invalidError }
       }
+
       // Send Bnb
       const { receipt, error: txError } = await sendBNB(
         cloneWallet,
@@ -88,25 +86,24 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
         amountOfEther
       )
       if (txError) {
-        error = txError
         setMessage(
           `Collect ${amountOfEther} ${token} to ${cloneWallet.address}. --- [FAIL] ${txError}`
         )
+        return { ...cloneWallet, error: txError }
       }
 
+      console.log(txError, 3)
       // SUCCESS
       if (receipt) {
         setMessage(`Collect ${amountOfEther} ${token} to ${cloneWallet.address}. -- [SUCCESS]`)
-        hash = receipt.transactionHash
+        return { ...cloneWallet, hash: receipt.transactionHash }
       }
     } catch (err) {
-      error = err.message
       setMessage(
         `Collect ${amountOfEther} ${token} to ${cloneWallet.address}. -- [FAIL] ${err.message}`
       )
+      return { ...cloneWallet, error: err.message }
     }
-
-    return { ...cloneWallet, error, hash }
   }
 
   // [COLLECT]

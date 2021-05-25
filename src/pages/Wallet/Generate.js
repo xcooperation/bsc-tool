@@ -12,7 +12,7 @@ import SpreadBtn from "../../components/Button/SpreadBtn"
 import CollectBtn from "../../components/Button/CollectBtn"
 import BalanceBtn from "../../components/Button/BalanceBtn"
 
-export default function Generate({ data, setData, token, setToken, setStage, setAction }) {
+export default function Generate({ data, setData, token, setToken, setStage}) {
   const { generateWallet, storeData, getData, removeData } = useBscContext()
   const [generated, setGenerated] = useState(false)
   const [quantity, setQuantity] = useState(0)
@@ -73,19 +73,16 @@ export default function Generate({ data, setData, token, setToken, setStage, set
   // Handle spread token
   const handleSpreadToken = function() {
     setStage('spread')
-    setAction('spread')
   }
 
   // Handle collecct token
   const handleCollectToken = function() {
     setStage('collect')
-    setAction('collect')
   }
 
   // Handle Balance button
   const handleBalanceBtn = function() {
     setStage('balance')
-    setAction('balance')
   }
 
   return (

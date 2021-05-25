@@ -117,6 +117,12 @@ export const BscProvider = function({children}) {
     const gasPrice = await web3.eth.getGasPrice()
     const gas = 21000
     const transferAmount = new BigNumber(amountOfWei).minus(gas * gasPrice )
+    
+    // Insufficient amount
+    if (transferAmount.lt(0)) {
+      return {error: 'Amount is too small, below the gas fee'}
+    }
+
     try {
       const nonce = await web3.eth.getTransactionCount(wallet.address, "pending")
       const txObject = {
@@ -125,7 +131,7 @@ export const BscProvider = function({children}) {
         to: toAddress.toString(),
         gasPrice,
         gas,
-        value: transferAmount.toString()
+        value: web3.utils.toHex(transferAmount.toString())
       }
 
       const signedTransaction = await web3.eth.accounts.signTransaction(txObject, wallet.privateKey)
