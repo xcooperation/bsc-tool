@@ -1,6 +1,7 @@
 import Web3 from "web3"
 import BigNumber from "bignumber.js"
 import { useContext, createContext } from "react"
+import { Router } from "../constant/Pool"
 
 const BscContext = createContext()
 
@@ -10,6 +11,8 @@ export const BscProvider = function ({ children }) {
   const web3 = new Web3(bsc_rpc_test)
   const localStorageName = "bsc-wallets"
   const resultStorageName = "bsc-result"
+  const swapStorageName = "bsc-swap-wallets"
+  const swapResultStorageName = "bsc-swap-result-wallets"
 
   // Generate wallet
   const generateWallet = async (quantity) => {
@@ -59,7 +62,10 @@ export const BscProvider = function ({ children }) {
       throw new Error("Private key is not valid.")
     }
     try {
-      return { wallet: web3.eth.accounts.privateKeyToAccount(wallet_pk.toString().trim()) }
+      const { address, privateKey } = web3.eth.accounts.privateKeyToAccount(
+        wallet_pk.toString().trim()
+      )
+      return { wallet: { address, privateKey } }
     } catch (error) {
       return { error: error.message }
     }
@@ -169,8 +175,9 @@ export const BscProvider = function ({ children }) {
       const estimateGas = await contractInstance.methods
         .transfer(toAddress, amountOfWei.toString())
         .estimateGas({ from: wallet.address })
-      
+
       const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas)
+      
       return totalFee
     } catch (error) {
       return { error: error.message }
@@ -221,17 +228,20 @@ export const BscProvider = function ({ children }) {
         .transfer(toAddress, amountOfWei.toString())
         .encodeABI()
 
-
       // Calculate gas
       const estimateGas = await contractInstance.methods
         .transfer(toAddress, amountOfWei.toString())
         .estimateGas({ from: wallet.address })
+
+      // Gas fee
+      const gasFee = await web3.eth.getGasPrice()
 
       const nonce = await web3.eth.getTransactionCount(wallet.address, "pending")
       // Create transaction
       const transactionObject = {
         nonce: web3.utils.toHex(nonce),
         from: wallet.address,
+        gasPrice: web3.utils.toHex(gasFee.toString()),
         gas: web3.utils.toHex(estimateGas.toString()), // Gas limit
         to: BEP20_TOKEN.address,
         value: "0", // in wei
@@ -253,12 +263,166 @@ export const BscProvider = function ({ children }) {
     }
   }
 
+  // Approve
+  const approve = async function (from, token, toAddress) {
+    try {
+      const tokenInstance = new web3.eth.Contract(token.ABI, token.address)
+      const approveAmount =
+        "115792089237316195423570985008687907853269984665640554039457584007913129639935"
+
+      // Encode transfer data
+      const encodedData = await tokenInstance.methods
+        .approve(toAddress, approveAmount)
+        .encodeABI({ from: from.address })
+      // Get gas fee
+      const estimateGas = await tokenInstance.methods
+        .approve(toAddress, approveAmount)
+        .estimateGas({ gas: 5000000, from: from.address })
+
+      const totalFee = new BigNumber(estimateGas).multipliedBy((await calculateGas()).gasFee)
+      const { balanceBnb } = await getBalanceBnb(from.address)
+      if (totalFee.gt(balanceBnb)) {
+        return { error: `Insufficient to approve` }
+      }
+
+      // Create tx object
+      const transactionObject = {
+        from: from.address,
+        gas: web3.utils.toHex(estimateGas.toString()), // Gas limit
+        to: token.address,
+        value: "0", // in wei
+        data: web3.utils.toHex(encodedData),
+      }
+
+      // Sign transaction
+      const signedTransaction = await web3.eth.accounts.signTransaction(
+        transactionObject,
+        from.privateKey
+      )
+
+      // Send signed transaction
+      const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+
+      return receipt
+    } catch (error) {
+      throw error
+    }
+  }
+
+  // Check approval
+  const checkApproval = async function (from, token, toAddress) {
+    try {
+      const tokenInstance = new web3.eth.Contract(token.ABI, token.address)
+
+      // Get gas fee
+      const isApproved = await tokenInstance.methods.allowance(from.address, toAddress).call()
+
+      if (isApproved.toString() !== "0") {
+        return { approved: true }
+      }
+
+      return { approved: false }
+    } catch (error) {
+      return { error: error.message }
+    }
+  }
+
+  // Swap tokens
+  const swapTokenToToken = async function (wallet, token0, amountToken0, TOKENS) {
+    try {
+      const routerInstance = new web3.eth.Contract(Router.ABI, Router.address)
+      // Convert amountERC20
+      const amountOfWei = convertToDecimal(amountToken0, token0.decimal)
+      // Path
+      const path =
+        TOKENS[0].address === token0.address
+          ? [token0.address, TOKENS[1].address]
+          : [token0.address, TOKENS[0].address]
+
+      // Check approval
+      const { approved, error } = await checkApproval(wallet, token0, Router.address)
+      if (error) {
+        return { error }
+      }
+      
+      let transfer = false
+      if (!approved) {
+        const approveTx = await approve(wallet, token0, Router.address)
+        if (approveTx.status === false) {
+          return {error: 'Failed to make allowance for pair to swap.'}
+        } else {
+          transfer = true
+        }
+      }
+      
+      if (transfer || approved) {
+        // Calculate transfer data
+        const transferData = await routerInstance.methods
+          .swapExactTokensForTokens(
+            amountOfWei, // input
+            1, // min output
+            path, // path
+            wallet.address, // recipient
+            Date.now() + 1000 * 60 * 5 // deadline
+          )
+          .encodeABI()
+
+        // Calculate gas
+        const estimateGas = await routerInstance.methods
+          .swapExactTokensForTokens(
+            amountOfWei, // input
+            1, // min output
+            path, // path
+            wallet.address, // recipient
+            Date.now() + 1000 * 60 * 5 // deadline
+          )
+          .estimateGas({ from: wallet.address })
+
+        // Gas fee
+        const gasFee = await web3.eth.getGasPrice()
+
+        const nonce = await web3.eth.getTransactionCount(wallet.address, "pending")
+        // Create transaction
+        const transactionObject = {
+          nonce: web3.utils.toHex(nonce),
+          from: wallet.address,
+          gasPrice: web3.utils.toHex(gasFee.toString()),
+          gas: web3.utils.toHex(estimateGas.toString()), // Gas limit
+          to: Router.address,
+          value: "0", // in wei
+          data: web3.utils.toHex(transferData),
+        }
+
+        // Sign transaction
+        const signedTransaction = await web3.eth.accounts.signTransaction(
+          transactionObject,
+          wallet.privateKey
+        )
+
+        // Send signed transaction
+        const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+
+        if (receipt.status === false) {
+          return {receipt, error: 'Failed to make transaction.'}
+        }
+
+        return { receipt }
+      } else {
+        return { error: "Can not send transaction" }
+      }
+    } catch (error) {
+      return { error: error.message }
+    }
+  }
+
   return (
     <BscContext.Provider
       value={{
         // variables
         web3,
         resultStorageName,
+        swapStorageName,
+        swapResultStorageName,
         generateWallet,
         getWalletByPK,
         // Convert
@@ -281,6 +445,7 @@ export const BscProvider = function ({ children }) {
         // transaction
         sendBNB,
         sendBEP20,
+        swapTokenToToken,
       }}
     >
       {children}

@@ -1,17 +1,23 @@
-
+import BackBtn from '../Button/BackBtn'
 export default function CollectForm({
   token,
   handleSubmit,
   error, 
   mainWallet,
   setMainWallet,
+  setStage
 }) {
+  const handleBack = function(params) {
+    setStage('generate')
+  }
   return (
     <>
       <div className="card-header">
         Collect [{token.symbol}]
       </div>
       <div className="card-body">
+        {/* Back button */}
+        <BackBtn handler={handleBack} />
         {/* Generate */}
         <form onSubmit={handleSubmit}>
           <div className="d-flex justify-content-center p-1">

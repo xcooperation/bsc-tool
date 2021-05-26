@@ -6,15 +6,15 @@ import WalletTable from "../../components/Table/WalletTable/WalletTable"
 import DownloadBtn from "../../components/Button/DownloadBtn"
 import CancelBtn from "../../components/Button/CancelBtn"
 import BackBtn from "../../components/Button/BackBtn"
-import {  useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Result({setStage}) {
-  const { resultStorageName, getData, removeData,  } = useBscContext()
-  const [resultData, setResultData] = useState(getData(resultStorageName))
+  const { swapResultStorageName, storeData, getData, removeData,  } = useBscContext()
+  const [resultData, setResultData] = useState(getData(swapResultStorageName))
 
   // handle backward btn
   const handleBackward = function() {
-    setStage('generate')
+    setStage('input')
   }
 
   // handle download
@@ -33,12 +33,12 @@ export default function Result({setStage}) {
     const wbout = XLSX.write(wb, wopts)
 
     /* the saveAs call downloads a file on the local machine */
-    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "bsc-result.xlsx")
+    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "bsc-swap-result.xlsx")
   }
 
   // handle cancel
   const handleCancel = function() {
-    removeData(resultStorageName)
+    removeData(swapResultStorageName)
     setStage('generate')
   }
 

@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react"
 import { useBscContext } from "../../context/BscContext"
-import BigNumber from "bignumber.js"
 
 // Components
 import CollectForm from "../../components/Form/CollectForm"
@@ -258,6 +257,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     <>
       {!isValid && (
         <CollectForm
+          setStage={setStage}
           token={token}
           handleSubmit={handleSubmit}
           error={error}

@@ -65,7 +65,7 @@ export default function Wallet() {
           />
         )}
 
-        {/* Logger */}
+        {/* Result */}
         {stage === 'result' && (
           <Result 
             data={data}

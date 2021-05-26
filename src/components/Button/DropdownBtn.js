@@ -29,12 +29,14 @@ export default function DropdownBtn({ items, token, setToken, name, style }) {
       <div id={`${name}-dropdown`} className="dropdown-menu">
         {items.map((item, index) => {
           if (item.symbol === 'BNB') {
-            return (<>
-            <span key={index} className="dropdown-item" onClick={handleSelectToken}>
+            return (
+            <span key={index} >
+            <span className="dropdown-item" onClick={handleSelectToken}>
               {item.symbol}
             </span>
             <div className="dropdown-divider"></div>
-            </>)
+            </span>
+            )
           }
 
           return (

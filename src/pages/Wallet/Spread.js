@@ -191,7 +191,6 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
       setMessage(`Sending ${amountOfEther} ${token.symbol}  to ${cloneWallet.address}. -- [FAIL] ${err.message}`)
       return {...cloneWallet, error: err.message}
     }
-    
   }
 
   // [BNB]
@@ -259,6 +258,7 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
         error={error}
         setAmount={setAmount}
         amount={amount}
+        setStage={setStage}
       />
     )}
 

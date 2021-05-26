@@ -1,18 +1,25 @@
 import { useState } from 'react'
+import BackBtn from '../Button/BackBtn'
 
 export default function SpreadForm({
   token,
   handleSubmit,
-  error, setAmount, amount
+  error, setAmount, amount, 
+  setStage
 }) {
   const [privateKey, setPrivateKey] = useState('')
 
+  const handleBack = function(params) {
+    setStage('generate')
+  }
   return (
     <>
       <div className="card-header">
         Spread [{token.symbol}]
       </div>
       <div className="card-body">
+        {/* Back button */}
+        <BackBtn handler={handleBack} />
         {/* Generate */}
         <form onSubmit={handleSubmit}>
           <div className="d-flex justify-content-center p-1">

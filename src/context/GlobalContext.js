@@ -3,7 +3,7 @@ import {createContext, useContext, useEffect, useState} from 'react'
 const GlobalContext = createContext()
 
 export const GlobalProvider = function({children}) {
-  const navLinks = ['home', 'wallet', 'swap']
+  const navLinks = ['home', 'wallet', 'pool', 'swap', 'list']
   const [activeNav, setActiveNav] = useState('home')
 
   useEffect(() => {
