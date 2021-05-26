@@ -7,7 +7,7 @@ import NavLink from "./NavLink"
 import "./Nav.css"
 
 export default function Nav() {
-  const { navLinks, activeNav, setActiveNav } = useGlobalContext()
+  const { navLinks, subLinks, activeNav, setActiveNav } = useGlobalContext()
 
   // Switch route
   const switchRoute = (link) => {
@@ -45,6 +45,7 @@ export default function Nav() {
             {navLinks.map((link, index) => (
               <NavLink
                 id={`route-${link}`}
+                subLinks={subLinks}
                 key={index} 
                 name={link} 
                 to={`/${link}`} 

@@ -3,7 +3,8 @@ import {createContext, useContext, useEffect, useState} from 'react'
 const GlobalContext = createContext()
 
 export const GlobalProvider = function({children}) {
-  const navLinks = ['home', 'wallet', 'pool', 'swap', 'list']
+  const navLinks = ['home', 'wallet', 'pool', 'swap']
+  const subLinks = {pool: ["reserve", "pair", "liquidity"]}
   const [activeNav, setActiveNav] = useState('home')
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export const GlobalProvider = function({children}) {
 
   return (
     <GlobalContext.Provider value={{
-      navLinks,
+      navLinks, subLinks,
       activeNav, setActiveNav
     }}>
       {children}

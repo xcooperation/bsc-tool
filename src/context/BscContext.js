@@ -1,7 +1,7 @@
 import Web3 from "web3"
 import BigNumber from "bignumber.js"
 import { useContext, createContext } from "react"
-import { Router } from "../constant/Pool"
+import { Router, Factory } from "../constant/Pool"
 
 const BscContext = createContext()
 
@@ -415,6 +415,79 @@ export const BscProvider = function ({ children }) {
     }
   }
 
+  // Check gas fee for creating pair
+  const checkCreatingFee = async function (from, token0, token1) {
+    try {
+      const factoryInstance = new web3.eth.Contract(Factory.ABI, Factory.address)
+        console.log(token0.address, token1.address)
+      // Get estimate gas
+      const estimateGas = await factoryInstance.methods
+        .createPair(token0.address, token1.address)
+        .estimateGas({gas: 5000000, from: from.address})
+
+      // Get gas fee
+      const gasFee = await web3.eth.getGasPrice()
+      // total gas 
+      const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas)
+
+      // Get balance
+      const {balanceBnb, balanceErr} = await getBalanceBnb(from.address)
+      if(balanceErr) {
+        return { error: balanceErr }
+      }
+
+      // Compare balance with gas fee
+      if (new BigNumber(totalFee).gt(balanceBnb)) {
+        return {error: 'Insufficient balance.'}
+      }
+
+      return {sufficient: true}
+    } catch (error) {
+      console.log(error)
+      return { error: error.message }
+    }
+  }
+
+  // Create pair 
+  const createPair = async function (from, token0, token1) {
+    try {
+      const factoryInstance = new web3.eth.Contract(Factory.ABI, Factory.address)
+  
+      // Encode transfer data
+      const encodedData = await factoryInstance.methods.createPair(token0.address, token1.address).encodeABI({from: from.address})
+      
+      // Get estimate gas
+      const estimateGas = await factoryInstance.methods
+        .createPair(token0.address, token1.address)
+        .estimateGas({gas: 5000000, from: from.address})
+
+      // Get gas fee
+      const gasFee = await web3.eth.getGasPrice()
+      
+      // Create tx object
+      const transactionObject = {
+        from: from.address,
+        gasPrice: web3.utils.toHex(gasFee.toString()),
+        gas: web3.utils.toHex(estimateGas.toString()), // Gas limit
+        to: Factory.address,
+        value: "0", // in wei
+        data: web3.utils.toHex(encodedData)
+      }
+
+      // Sign transaction
+      const signedTransaction = await web3.eth.accounts.signTransaction(transactionObject, from.privateKey)
+  
+      // Send signed transaction
+      const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+
+      return {receipt}
+    } catch (error) {
+      console.log(error)
+      return { error: error.message }
+    }
+  }
+
+  /** RETURN */
   return (
     <BscContext.Provider
       value={{
@@ -423,6 +496,7 @@ export const BscProvider = function ({ children }) {
         resultStorageName,
         swapStorageName,
         swapResultStorageName,
+        // Utility
         generateWallet,
         getWalletByPK,
         // Convert
@@ -446,6 +520,9 @@ export const BscProvider = function ({ children }) {
         sendBNB,
         sendBEP20,
         swapTokenToToken,
+        // Pool
+        checkCreatingFee,
+        createPair
       }}
     >
       {children}

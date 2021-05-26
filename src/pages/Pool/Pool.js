@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react"
 import BigNumber from "bignumber.js"
 import { pairs } from "../../constant/Pair"
-import { BNB, DPC, SLC } from "../../constant/BEP20"
+import { BNB, DPC, SLC, WBNB } from "../../constant/BEP20"
 import { useBscContext } from "../../context/BscContext"
 
 import PoolForm from "../../components/Form/PoolForm"
 import Data from "./Data"
 
-const TOKENS = [BNB, DPC, SLC]
+const TOKENS = [BNB, DPC, SLC, WBNB]
 export default function Pool() {
   const { web3, convertToToken, removeData, swapStorageName } = useBscContext()
   const [pool, setPool] = useState(null)

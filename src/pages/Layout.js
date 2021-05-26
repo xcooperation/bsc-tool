@@ -5,7 +5,7 @@ import Home from "./Home"
 import Wallet from "./Wallet/Wallet"
 import Pool from "./Pool/Pool"
 import Swap from "./Swap/Swap"
-import Listcoin from "./Listcoin/Listcoin"
+import Pair from "./Pair/Pair"
 
 export default function Layout() {
   return (
@@ -18,16 +18,18 @@ export default function Layout() {
         <Wallet />
       </Route>
 
-      <Route exact path="/pool">
+      {/* Pool */}
+      <Route exact path="/pool/reserve">
         <Pool />
       </Route>
-      
-      <Route exact path="/swap">
-        <Swap />
+
+
+      <Route exact path="/pool/pair">
+        <Pair />
       </Route>
 
-      <Route exact path="/List">
-        <Listcoin />
+      <Route exact path="/swap">
+        <Swap />
       </Route>
     </>
   )
