@@ -24,7 +24,6 @@ export default function NavLink({ id, name, active, to, switchRoute, subLinks })
       {!sub && (
         <li className="nav-item">
           <Link
-            key={id}
             id={id}
             className={`nav-link ${active ? "active" : ""}`}
             aria-current="page"
@@ -39,8 +38,8 @@ export default function NavLink({ id, name, active, to, switchRoute, subLinks })
       {sub && (
         <li className="nav-item dropdown">
           <Link
-            key={id}
             className={`nav-link dropdown-toggle ${active ? "active" : ""}`}
+            id={id}
             to="#"
             role="button"
             data-toggle="dropdown"

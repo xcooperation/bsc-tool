@@ -13,7 +13,7 @@ export default function Nav() {
   const switchRoute = (link) => {
     setActiveNav(link)
     navLinks.forEach(nav => {
-      const linkElement = document.querySelector(`#route-${nav}`)
+      const linkElement = document.getElementById(`route-${nav}`)
       
       if (nav === activeNav) {
         linkElement.classList.add("active")
