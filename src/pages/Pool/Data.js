@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js"
 import React from "react"
 
-export default function Data({ token0, token1, pricePer0, pricePer1 }) {
+export default function Data({ token0, token1, pricePer0, pricePer1, reserve0, reserve1 }) {
   return (
     <>
     {/* DIVIDER */}
@@ -17,7 +17,7 @@ export default function Data({ token0, token1, pricePer0, pricePer1 }) {
             className="form-control text-right" 
             type="text" 
             name="token0" 
-            value={token0.reserve}
+            value={reserve0}
             disabled />
         </div>
       </div>
@@ -29,7 +29,7 @@ export default function Data({ token0, token1, pricePer0, pricePer1 }) {
             className="form-control text-right" 
             type="text" 
             name="token1" 
-            value={token1.reserve}
+            value={reserve1}
             disabled />
         </div>
       </div>

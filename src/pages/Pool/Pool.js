@@ -13,24 +13,11 @@ export default function Pool() {
   const [pool, setPool] = useState("")
   const [token0, setToken0] = useState("")
   const [token1, setToken1] = useState("")
-  const [prices, setPrices] = useState({ pricePer0: 0, pricePer1: 0 })
+  const [reserve0, setReserve0] = useState(0)
+  const [reserve1, setReserve1] = useState(0)
+  const [price0, setPrice0] = useState(0)
+  const [price1, setPrice1] = useState(0)
   const [selected, setSelected] = useState(false)
-
-  useEffect(() => {
-    if (selected) {
-      async function setData() {
-        await getReserve(pool, token0, token1)
-      }
-
-      setData()
-    }
-  }, [selected])
-
-  useEffect(() => {
-    if (token0 && token1) {
-      getPrices()
-    }
-  }, [token0, token1])
 
   // handle selecting pair
   const handleSelect = async function (e) {
@@ -40,6 +27,12 @@ export default function Pool() {
       const token0 = TOKENS.find((token) => token.address === pair.token0)
       const token1 = TOKENS.find((token) => token.address === pair.token1)
 
+      const reserves = await getReserve(pair, token0, token1)
+      const prices = await getPrices(reserves[0], reserves[1])
+      setReserve0(reserves[0])
+      setReserve1(reserves[1])
+      setPrice0(prices.pricePer0)
+      setPrice1(prices.pricePer1)
       setPool(pair)
       setToken0(token0)
       setToken1(token1)
@@ -58,23 +51,20 @@ export default function Pool() {
       const contractInstance = new web3.eth.Contract(pair.ABI, pair.address)
       const reserves = await contractInstance.methods.getReserves().call()
 
-      setToken0({ ...token0, reserve: convertToToken(reserves[0], token0.decimal).toString() })
-      setToken1({ ...token1, reserve: convertToToken(reserves[1], token1.decimal).toString() })
+      return [convertToToken(reserves[0], token0.decimal).toString(), convertToToken(reserves[1], token1.decimal).toString()]
     } catch (error) {
-      setToken0({ ...token0, reserve: 0 })
-      setToken1({ ...token1, reserve: 0 })
-      setPrices({ pricePer0: 0, pricePer1: 0 })
+      return null
     }
   }
 
   // get prices
-  const getPrices = function () {
+  const getPrices = function (reserve0, reserve1) {
     // Prices
-    let pricePer0 = new BigNumber(token1.reserve).dividedBy(token0.reserve)
+    let pricePer0 = new BigNumber(reserve1).dividedBy(reserve0)
     pricePer0 = pricePer0.minus(pricePer0.multipliedBy(0.2 / 100))
-    let pricePer1 = new BigNumber(token0.reserve).dividedBy(token1.reserve)
+    let pricePer1 = new BigNumber(reserve0).dividedBy(reserve1)
     pricePer1 = pricePer1.minus(pricePer1.multipliedBy(0.2 / 100))
-    setPrices({ pricePer0: pricePer0.toString(), pricePer1: pricePer1.toString() })
+    return { pricePer0: pricePer0.toString(), pricePer1: pricePer1.toString() }
   }
 
   return (
@@ -94,8 +84,10 @@ export default function Pool() {
                     <Data
                       token0={token0}
                       token1={token1}
-                      pricePer0={prices.pricePer0}
-                      pricePer1={prices.pricePer1}
+                      reserve0={reserve0}
+                      reserve1={reserve1}
+                      pricePer0={price0}
+                      pricePer1={price1}
                     />
                   </>
                 )}
