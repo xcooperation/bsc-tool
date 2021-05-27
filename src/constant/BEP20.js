@@ -3,7 +3,7 @@ import BEP20_ABI from '../ABI/BEP20.json'
 export const BNB = {
   symbol: "BNB",
   decimal: 18,
-  address: '',
+  address: 'BNB',
   ABI: BEP20_ABI
 }
 

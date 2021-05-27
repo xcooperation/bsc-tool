@@ -10,9 +10,9 @@ import Data from "./Data"
 const TOKENS = [BNB, DPC, SLC, WBNB]
 export default function Pool() {
   const { web3, convertToToken, removeData, swapStorageName } = useBscContext()
-  const [pool, setPool] = useState(null)
-  const [token0, setToken0] = useState(null)
-  const [token1, setToken1] = useState(null)
+  const [pool, setPool] = useState("")
+  const [token0, setToken0] = useState("")
+  const [token1, setToken1] = useState("")
   const [prices, setPrices] = useState({ pricePer0: 0, pricePer1: 0 })
   const [selected, setSelected] = useState(false)
 

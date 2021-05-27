@@ -137,9 +137,12 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // SUCCESS
-      if (receipt) {
+      if (receipt.status === true) {
         setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
         return { ...cloneWallet, hash: receipt.transactionHash }
+      }else {
+        setMessage(`Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`)
+        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction reverted.'}
       }
     } catch (err) {
       setMessage(
@@ -178,9 +181,12 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // SUCCESS
-      if (receipt) {
+      if (receipt.status === true) {
         setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
         return { ...cloneWallet, hash: receipt.transactionHash }
+      }else {
+        setMessage(`Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`)
+        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction reverted.'}
       }
     } catch (err) {
       setMessage(
@@ -199,7 +205,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
             const resultData = await collectBnb(sender, sender.amount, setMessage)
 
             return resolve(resultData)
-          }, 1000 * index)
+          }, 100 * index)
         })
       })
     )
@@ -216,7 +222,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
             const resultData = await collectBep20(sender, sender.amount, setMessage)
 
             return resolve(resultData)
-          }, 1000 * index)
+          }, 100 * index)
         })
       })
     )

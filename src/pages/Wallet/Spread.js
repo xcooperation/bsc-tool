@@ -135,6 +135,7 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
 
   // Spread BNB
   async function spreadBnb (cloneWallet, amountOfEther, setMessage) {
+    cloneWallet.spread_amount = amountOfEther
     try {
       // Validate
       const {valid, error: invalidError} = await bnbValidation(cloneWallet, amountOfEther)
@@ -153,7 +154,9 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
       if (receipt) {
         setMessage(`Sending ${amountOfEther} ${token.symbol}  to ${cloneWallet.address}. -- [SUCCESS]`)
         return {...cloneWallet, hash: receipt.transactionHash}
-        
+      } else {
+        setMessage(`Sending ${amountOfEther} ${token.symbol}  to ${cloneWallet.address}. -- [FAILED] Transaction converted.`)
+        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction converted.'}
       }
 
     } catch (err) {
@@ -165,6 +168,7 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
   
   // Spread BEP20
   async function spreadBep20 (cloneWallet, amountOfEther, setMessage) {
+    cloneWallet.spread_amount = amountOfEther
     try {
       // Validate
       const {valid, error: invalidError} = await bep20Validation(cloneWallet, amountOfEther)
@@ -181,10 +185,12 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
       }
 
       // SUCCESS
-      if (receipt) {
+      if (receipt.status === true) {
         setMessage(`Sending ${amountOfEther} ${token.symbol}  to ${cloneWallet.address}. -- [SUCCESS]`)
         return {...cloneWallet, hash: receipt.transactionHash}
-        
+      } else {
+        setMessage(`Sending ${amountOfEther} ${token.symbol}  to ${cloneWallet.address}. -- [FAILED] Transaction reverted.`)
+        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction reverted.'}
       }
 
     } catch (err) {
@@ -216,7 +222,7 @@ export default function Spread({ data, token, setStage, amount, setAmount, setMa
           const resultData = await spreadBep20(sender, amount, setMessage)
           
           return resolve(resultData)
-        }, 1000 * index)
+        }, 1400 * index)
       })
     }))
 

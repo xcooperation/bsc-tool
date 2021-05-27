@@ -30,7 +30,7 @@ export default function CollectForm({
                     type="text" 
                     name="wallet_address_inp"
                     className="form-control"
-                    value={(mainWallet && mainWallet.address) ? mainWallet.address : ''}
+                    value={(mainWallet) ? mainWallet.address : ''}
                     onChange={e => setMainWallet({address: e.target.value})}
                   />
                 </div>

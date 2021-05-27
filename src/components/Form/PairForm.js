@@ -49,7 +49,7 @@ export default function SwapForm({
                   className="form-control text-center"
                   type="text"
                   name="token1_inp"
-                  value={token && token.address}
+                  value={token ? token.address : ""}
                   onChange={handleToken}
                   placeholder="Input the address of the token"
                 />

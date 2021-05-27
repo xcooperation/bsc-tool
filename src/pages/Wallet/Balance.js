@@ -49,7 +49,7 @@ export default function Balance({
           const resultData = await balanceBnb(sender, setMessage)
           
           return resolve(resultData)
-        }, 1000 * index)
+        }, 10 * index)
       })
     }))
 
@@ -64,7 +64,7 @@ export default function Balance({
           const resultData = await balanceBep20(sender, setMessage)
           
           return resolve(resultData)
-        }, 1000 * index)
+        }, 10 * index)
       })
     }))
 

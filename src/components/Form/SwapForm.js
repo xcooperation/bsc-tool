@@ -1,8 +1,11 @@
 import { useState } from "react"
 import SubmitBtn from "../Button/SubmitBtn"
+import BackBtn from "../Button/BackBtn"
 
 export default function SwapForm({
+  setStage,
   setToken,
+  setSwapToToken,
   token,
   TOKENS,
   amount,
@@ -12,29 +15,33 @@ export default function SwapForm({
 }) {
   const [toToken, setToToken] = useState("")
   const [selectedFrom, setSelectedFrom] = useState(false)
-  
+
+  const handleBack = function() {
+    setStage('input')
+  }
+
   // handle Select from
   const handleSelectFrom = function (e) {
     if (e.target.value) {
       const selectedToken = TOKENS.find((t) => t.address === e.target.value)
       const unselectedToken = TOKENS.find((t) => t.address !== e.target.value)
-  
-  
+
       setToken(selectedToken)
       setSelectedFrom(true)
       setToToken(unselectedToken)
+      setSwapToToken(unselectedToken)
       return
     }
-
 
     setToken(null)
     setSelectedFrom(false)
     setToToken("")
   }
 
-
   return (
     <>
+    {/* Back button */}
+    <BackBtn handler={handleBack} />
       <form onSubmit={handleSubmit}>
         <div className="d-flex justify-content-center p-1">
           <div className="col-9 mt-3">
@@ -67,12 +74,12 @@ export default function SwapForm({
                   <div className="input-group-prepend">
                     <div className="input-group-text mr-2">To</div>
                     <input
-                        className="form-control text-center"
-                        type="text"
-                        name="token1_inp"
-                        value={toToken.symbol}
-                        disabled
-                      />
+                      className="form-control text-center"
+                      type="text"
+                      name="token1_display_inp"
+                      value={toToken ? toToken.symbol : ""}
+                      disabled
+                    />
                   </div>
                 </div>
               )}

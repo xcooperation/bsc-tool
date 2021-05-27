@@ -9,7 +9,7 @@ export default function Pair() {
   const { web3, getWalletByPK, checkCreatingFee, createPair } = useBscContext()
   const [mainWallet, setMainWallet] = useState({})
   const [token0] = useState(WBNB)
-  const [token1, setToken1] = useState(null)
+  const [token1, setToken1] = useState("")
   const [error, setError] = useState("")
   const [doneMsg, setDoneMsg] = useState("")
   const [isValid, setIsValid] = useState(false)
