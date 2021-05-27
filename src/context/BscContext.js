@@ -2,10 +2,13 @@ import Web3 from "web3"
 import BigNumber from "bignumber.js"
 import { useContext, createContext } from "react"
 import { Router, Factory } from "../constant/Pool"
+import PAIR_ABI from "../ABI/PAIR.json"
+import BEP20_ABI from "../ABI/BEP20.json"
 
 const BscContext = createContext()
 
 export const BscProvider = function ({ children }) {
+  BigNumber.config({ EXPONENTIAL_AT: 50 })
   const bsc_rpc_main = "https://bsc-dataseed.binance.org/"
   const bsc_rpc_test = "https://data-seed-prebsc-1-s1.binance.org:8545/"
   const web3 = new Web3(bsc_rpc_test)
@@ -68,6 +71,17 @@ export const BscProvider = function ({ children }) {
       return { wallet: { address, privateKey } }
     } catch (error) {
       return { error: error.message }
+    }
+  }
+
+  // Get token data
+  const getTokenData = async function (address) {
+    const contractInstance = new web3.eth.Contract(BEP20_ABI, address)
+    return {
+      address,
+      decimal: await contractInstance.methods.decimals().call(),
+      symbol: await contractInstance.methods.symbol().call(),
+      ABI: BEP20_ABI,
     }
   }
 
@@ -177,7 +191,7 @@ export const BscProvider = function ({ children }) {
         .estimateGas({ from: wallet.address })
 
       const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas)
-      
+
       return totalFee
     } catch (error) {
       return { error: error.message }
@@ -344,17 +358,17 @@ export const BscProvider = function ({ children }) {
       if (error) {
         return { error }
       }
-      
+
       let transfer = false
       if (!approved) {
         const approveTx = await approve(wallet, token0, Router.address)
         if (approveTx.status === false) {
-          return {error: 'Failed to make allowance for pair to swap.'}
+          return { error: "Failed to make allowance for pair to swap." }
         } else {
           transfer = true
         }
       }
-      
+
       if (transfer || approved) {
         // Calculate transfer data
         const transferData = await routerInstance.methods
@@ -403,7 +417,7 @@ export const BscProvider = function ({ children }) {
         const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
 
         if (receipt.status === false) {
-          return {receipt, error: 'Failed to make transaction.'}
+          return { receipt, error: "Failed to make transaction." }
         }
 
         return { receipt }
@@ -419,51 +433,52 @@ export const BscProvider = function ({ children }) {
   const checkCreatingFee = async function (from, token0, token1) {
     try {
       const factoryInstance = new web3.eth.Contract(Factory.ABI, Factory.address)
-        console.log(token0.address, token1.address)
       // Get estimate gas
       const estimateGas = await factoryInstance.methods
         .createPair(token0.address, token1.address)
-        .estimateGas({gas: 5000000, from: from.address})
+        .estimateGas({ gas: 5000000, from: from.address })
 
       // Get gas fee
       const gasFee = await web3.eth.getGasPrice()
-      // total gas 
+      // total gas
       const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas)
 
       // Get balance
-      const {balanceBnb, balanceErr} = await getBalanceBnb(from.address)
-      if(balanceErr) {
+      const { balanceBnb, balanceErr } = await getBalanceBnb(from.address)
+      if (balanceErr) {
         return { error: balanceErr }
       }
 
       // Compare balance with gas fee
       if (new BigNumber(totalFee).gt(balanceBnb)) {
-        return {error: 'Insufficient balance.'}
+        return { error: "Insufficient balance." }
       }
 
-      return {sufficient: true}
+      return { sufficient: true }
     } catch (error) {
       console.log(error)
       return { error: error.message }
     }
   }
 
-  // Create pair 
+  // Create pair
   const createPair = async function (from, token0, token1) {
     try {
       const factoryInstance = new web3.eth.Contract(Factory.ABI, Factory.address)
-  
+
       // Encode transfer data
-      const encodedData = await factoryInstance.methods.createPair(token0.address, token1.address).encodeABI({from: from.address})
-      
+      const encodedData = await factoryInstance.methods
+        .createPair(token0.address, token1.address)
+        .encodeABI({ from: from.address })
+
       // Get estimate gas
       const estimateGas = await factoryInstance.methods
         .createPair(token0.address, token1.address)
-        .estimateGas({gas: 5000000, from: from.address})
+        .estimateGas({ gas: 5000000, from: from.address })
 
       // Get gas fee
       const gasFee = await web3.eth.getGasPrice()
-      
+
       // Create tx object
       const transactionObject = {
         from: from.address,
@@ -471,16 +486,248 @@ export const BscProvider = function ({ children }) {
         gas: web3.utils.toHex(estimateGas.toString()), // Gas limit
         to: Factory.address,
         value: "0", // in wei
-        data: web3.utils.toHex(encodedData)
+        data: web3.utils.toHex(encodedData),
       }
 
       // Sign transaction
-      const signedTransaction = await web3.eth.accounts.signTransaction(transactionObject, from.privateKey)
-  
+      const signedTransaction = await web3.eth.accounts.signTransaction(
+        transactionObject,
+        from.privateKey
+      )
+
       // Send signed transaction
       const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
 
-      return {receipt}
+      return { receipt }
+    } catch (error) {
+      return { error: error.message }
+    }
+  }
+
+  // Get pair
+  const getPair = async function (token0, token1) {
+    try {
+      const factoryInstance = new web3.eth.Contract(Factory.ABI, Factory.address)
+      const pairAddress = await factoryInstance.methods
+        .getPair(token0.address, token1.address)
+        .call()
+      if (pairAddress !== "0x0000000000000000000000000000000000000000") {
+        return pairAddress
+      }
+
+      return null
+    } catch (error) {
+      return { error: error.message }
+    }
+  }
+
+  // Add liquidity BNB
+  // token0 => BNB
+  const addLiquidityByBNB = async function (from, token1, amount0, amount1) {
+    try {
+      // Router
+      const routerInstance = new web3.eth.Contract(Router.ABI, Router.address)
+
+      // Check approval
+      const { approved, error } = await checkApproval(from, token1, Router.address)
+      if (error) {
+        return { error }
+      }
+
+      if (!approved) {
+        await approve(from, token1, Router.address)
+      }
+console.log(convertToDecimal( amount1.toString(), token1.decimal).toString())
+      // Encode transfer data
+      const encodedData = await routerInstance.methods
+        .addLiquidityBNB(
+          token1.address,
+          convertToDecimal( amount1.toString(), token1.decimal).toString(),
+          1,
+          1,
+          from.address,
+          Date.now() + 1000 * 60
+        )
+        .encodeABI()
+
+      // Get gas fee
+      const estimateGas = await routerInstance.methods
+        .addLiquidityBNB(
+          token1.address,
+          convertToDecimal( amount1.toString(), token1.decimal).toString(),
+          1,
+          1,
+          from.address,
+          Date.now() + 1000 * 60
+        )
+        .estimateGas({ gas: 5000000, from: from.address, value: web3.utils.toWei(amount0.toString(), 'ether')})
+
+      // gas fee
+      const gasFee = await web3.eth.getGasPrice()
+      const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas).plus(web3.utils.toWei(amount0.toString(), 'ether').toString())
+console.log(3)
+      // Check balance bnb
+      const { balanceBnb, error: balanceError } = await getBalanceBnb(from.address)
+      if (balanceError) {
+        return { error: balanceError }
+      }
+
+      // Check balance bnb vs gas fee
+      if (new BigNumber(balanceBnb).lt(totalFee)) {
+        return { error: `Insufficient balance` }
+      }
+      console.log(gasFee.toString())
+      console.log(web3.utils.toWei(amount0.toString(), 'ether'))
+      console.log(estimateGas + estimateGas * 0.1)
+      // Create tx object
+      const transactionObject = {
+        from: from.address,
+        gasPrice: gasFee.toString(),
+        gas: web3.utils.toHex(estimateGas), // Gas limit
+        to: Router.address,
+        value: web3.utils.toWei(amount0.toString(), 'ether'), // in wei
+        data: web3.utils.toHex(encodedData),
+      }
+      console.log(5)
+      console.log('receipt')
+      // Sign transaction
+      const signedTransaction = await web3.eth.accounts.signTransaction(
+        transactionObject,
+        from.privateKey
+      )
+
+      // Send signed transaction
+      const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+      console.log(receipt)
+      return { receipt }
+    } catch (error) {
+      console.log(error)
+      return { error: error.message }
+    }
+  }
+
+  // Add liquidity
+  const addLiquidity = async function (from, token_0, token_1, amount0, amount1) {
+    try {
+      const pairAddress = await getPair(token_0, token_1)
+      if (!pairAddress) {
+        return { error: "Pair does not exists." }
+      }
+
+      // Pair
+      const pairInstance = new web3.eth.Contract(PAIR_ABI, pairAddress)
+      const token0_address = await pairInstance.methods.token0().call()
+      const token1_address = await pairInstance.methods.token1().call()
+      const token0 = await getTokenData(token0_address)
+      const token1 = await getTokenData(token1_address)
+      amount0 =
+        token0_address === token0.address
+          ? convertToDecimal(amount0, token0.decimal).toString()
+          : convertToDecimal(amount1, token1.decimal).toString()
+      amount1 =
+        token1_address === token1.address
+          ? convertToDecimal(amount1, token1.decimal).toString()
+          : convertToDecimal(amount0, token0.decimal).toString()
+
+      // Router
+      const routerInstance = new web3.eth.Contract(Router.ABI, Router.address)
+
+      // Check approval token0
+      const { approved: approvedToken0, error: approved0Err } = await checkApproval(
+        from,
+        token0,
+        Router.address
+      )
+      if (approved0Err) {
+        return { error: approved0Err }
+      }
+      // Approve token0
+      if (!approvedToken0) {
+        await approve(from, token0, Router.address)
+      }
+
+      // Check approval token0
+      const { approved: approvedToken1, error: approved1Err } = await checkApproval(
+        from,
+        token0,
+        Router.address
+      )
+      if (approved1Err) {
+        return { error: approved1Err }
+      }
+
+      // Approve token1
+      if (!approvedToken0) {
+        await approve(from, token0, Router.address)
+      }
+
+      // Check approval token1
+      if (approvedToken0 && approvedToken1) {
+        // Encode transfer data
+        const encodedData = await routerInstance.methods
+          .addLiquidity(
+            token0.address,
+            token1.address,
+            amount0,
+            amount1,
+            amount0,
+            amount1,
+            from.address,
+            Date.now() + 1000 * 60
+          )
+          .encodeABI()
+
+        // Get gas fee
+        const estimateGas = await routerInstance.methods
+          .addLiquidity(
+            token0.address,
+            token1.address,
+            amount0,
+            amount1,
+            amount0,
+            amount1,
+            from.address,
+            Date.now() + 1000 * 60
+          )
+          .estimateGas({ gas: 5000000, from: from.address })
+
+        // gas fee
+        const gasFee = await web3.eth.getGasPrice()
+        const totalFee = new BigNumber(gasFee).multipliedBy(estimateGas)
+        // Check balance bnb
+        const { balanceBnb, error: balanceError } = await getBalanceBnb(from.address)
+        if (balanceError) {
+          return { error: balanceError }
+        }
+
+        // Check balance bnb vs gas fee
+        if (new BigNumber(balanceBnb).lt(totalFee)) {
+          return { error: `Insufficient balance` }
+        }
+
+        // Create tx object
+        const transactionObject = {
+          from: from.address,
+          gasPrice: web3.utils.toHex(gasFee.toString()),
+          gas: web3.utils.toHex(estimateGas + estimateGas * 0.1), // Gas limit
+          to: Router.address,
+          value: "0", // in wei
+          data: web3.utils.toHex(encodedData),
+        }
+        
+        // Sign transaction
+        const signedTransaction = await web3.eth.accounts.signTransaction(
+          transactionObject,
+          from.privateKey
+        )
+
+        // Send signed transaction
+        const receipt = await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction)
+        console.log(receipt)
+        return { receipt }
+      }
+
+      return { error: `Failed to add liquidity` }
     } catch (error) {
       console.log(error)
       return { error: error.message }
@@ -522,7 +769,9 @@ export const BscProvider = function ({ children }) {
         swapTokenToToken,
         // Pool
         checkCreatingFee,
-        createPair
+        createPair,
+        addLiquidity,
+        addLiquidityByBNB,
       }}
     >
       {children}

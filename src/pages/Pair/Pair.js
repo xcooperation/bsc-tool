@@ -86,7 +86,7 @@ export default function Pair() {
       if (createError) {
         return { error: createError }
       }
-console.log(receipt)
+      
       return { txHash: receipt.transactionHash }
     } catch (error) {
       return { error: error.message }

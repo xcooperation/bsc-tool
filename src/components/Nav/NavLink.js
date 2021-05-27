@@ -24,6 +24,7 @@ export default function NavLink({ id, name, active, to, switchRoute, subLinks })
       {!sub && (
         <li className="nav-item">
           <Link
+            key={id}
             id={id}
             className={`nav-link ${active ? "active" : ""}`}
             aria-current="page"
@@ -52,6 +53,7 @@ export default function NavLink({ id, name, active, to, switchRoute, subLinks })
           <div id="navbarDropdown" className="dropdown-menu" aria-labelledby="navbarDropdown">
             {sub.map((sublink, index) => (
               <SubLink
+                key={index}
                 id={index}
                 name={sublink}
                 to={`/${name}/${sublink}`}
