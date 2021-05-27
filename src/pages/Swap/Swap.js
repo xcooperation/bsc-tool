@@ -12,6 +12,7 @@ export default function Swap() {
   const [stage, setStage] = useState(STAGES[0])
   const [data, setData] = useState([])
   const [pair, setPair] = useState("")
+  const [token, setToken] = useState(BNB)
 
   return (
     <div className="container-fluid my-3">
@@ -21,9 +22,9 @@ export default function Swap() {
           <Input 
             data={data}
             setData={setData}
-            setStage={setStage}
             pair={pair}
             setPair={setPair}
+            setStage={setStage}
           />
         )}
 
