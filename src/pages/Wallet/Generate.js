@@ -12,6 +12,10 @@ import SpreadBtn from "../../components/Button/SpreadBtn"
 import CollectBtn from "../../components/Button/CollectBtn"
 import BalanceBtn from "../../components/Button/BalanceBtn"
 
+
+import {DPC, SLC, BNB, WBNB, TEST2, IPH, IPH2} from '../../constant/BEP20'
+const list_of_tokens = [BNB, DPC, SLC, TEST2, IPH, IPH2]
+
 export default function Generate({ data, setData, token, setToken, setStage}) {
   const { generateWallet, storeData, getData, removeData } = useBscContext()
   const [generated, setGenerated] = useState(false)
@@ -115,14 +119,22 @@ export default function Generate({ data, setData, token, setToken, setStage}) {
               {/* Left */}
               <div className="left-buttons" style={{position: 'relative'}}>
                 <BalanceBtn
+                  list_of_tokens={list_of_tokens} 
                   setToken={setToken} 
                   token={token} 
                   handler={handleBalanceBtn}
                   />
 
-                <CollectBtn handler={handleCollectToken} setToken={setToken} token={token} />
+                <CollectBtn 
+                 list_of_tokens={list_of_tokens} 
+                 handler={handleCollectToken} 
+                 setToken={setToken} 
+                 token={token} />
                 <SpreadBtn 
-                  handler={handleSpreadToken} setToken={setToken} token={token} />
+                  list_of_tokens={list_of_tokens} 
+                  handler={handleSpreadToken} 
+                  setToken={setToken} 
+                  token={token} />
               </div>
               {/* Right */}
               <div className="right-buttons">

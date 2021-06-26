@@ -1,8 +1,7 @@
 import {SiFitbit} from 'react-icons/si'
-import {DPC, SLC, BNB} from '../../constant/BEP20'
 import DropdownBtn from './DropdownBtn'
 
-export default function SpreadBNBBtn({handler, token, setToken}) {
+export default function SpreadBNBBtn({handler, token, setToken, list_of_tokens}) {
 
   return (
     <div className="btn-group mr-2">
@@ -15,7 +14,7 @@ export default function SpreadBNBBtn({handler, token, setToken}) {
       </button>
 
     <DropdownBtn
-      items={[BNB, DPC, SLC]}
+      items={list_of_tokens}
       token={token}
       setToken={setToken}
       handler={handler} 

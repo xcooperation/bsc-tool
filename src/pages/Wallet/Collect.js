@@ -1,10 +1,18 @@
 import { useEffect, useState, useRef } from "react"
 import { useBscContext } from "../../context/BscContext"
+import BigNumber from "bignumber.js"
 
 // Components
 import CollectForm from "../../components/Form/CollectForm"
 import Logger from "../../components/Logger/Logger"
 
+const untouch_wallets = [
+  "0x196C35776cF72ed607D4D1DbfFB9172921E4b4E7",
+  "0x5d4f740C6CEd25774845Ade3c931AEe30f666b32",
+  "0xd656ca1846bc2336e6E1905c914F97C5D936ce0d",
+  "0xF0a92065596Ecd47a926F83db3B175442eB6D812",
+  "0xB4eB6288c97a269b45ca36fe678739f5498c7d16",
+]
 export default function Collect({ data, token, setStage, setMainWallet, mainWallet }) {
   const {
     validateWallet,
@@ -18,7 +26,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
     getBalanceBnb,
     getBalanceBep20,
     calculateBEP20Fee,
-    convertToToken
+    convertToToken,
   } = useBscContext()
   const [error, setError] = useState("")
   const [isValid, setIsValid] = useState(false)
@@ -45,7 +53,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
   async function bnbValidation(wallet, amountOfEther) {
     try {
       // Check address
-      const {error: invalidFormat} = validateWallet(wallet.address, mainWallet.address)
+      const { error: invalidFormat } = validateWallet(wallet.address, mainWallet.address)
       if (invalidFormat) {
         return { error: invalidFormat }
       }
@@ -63,44 +71,47 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
   }
 
   // BEP20 Validation
-  async function bep20Validation (wallet, amountOfEther) {
+  async function bep20Validation(wallet, amountOfEther) {
     try {
       // Check address
-      const {error: invalidFormat} = validateWallet(wallet.address, mainWallet.address)
+      const { error: invalidFormat } = validateWallet(wallet.address, mainWallet.address)
       if (invalidFormat) {
         return { error: invalidFormat }
       }
 
       // Get balance Bnb
-      const {error: bnbError} = await getBalanceBnb(wallet.address)
+      const { error: bnbError } = await getBalanceBnb(wallet.address)
       if (bnbError) {
-        return {error: bnbError}
+        return { error: bnbError }
       }
 
       // Get gas price
       const gasFee = await calculateBEP20Fee(token, wallet, mainWallet.address, amountOfEther)
-      
+
       // Check balanceBnb >  gas Fee
-      const {error: invalidBnb} = await checkBnbBalance(wallet, web3.utils.fromWei(gasFee.toString(), 'ether'))
+      const { error: invalidBnb } = await checkBnbBalance(
+        wallet,
+        web3.utils.fromWei(gasFee.toString(), "ether")
+      )
       if (invalidBnb) {
-        return {error: invalidBnb}
+        return { error: invalidBnb }
       }
 
       // Get balanceBep20
-      const {error: bep20Err} = await getBalanceBep20(wallet.address, token)
-      if(bep20Err) {
-        return {error: bep20Err}
+      const { error: bep20Err } = await getBalanceBep20(wallet.address, token)
+      if (bep20Err) {
+        return { error: bep20Err }
       }
 
       // Check balanceBep20
-      const {error: invalidBep20} = await checkBep20Balance(wallet, amountOfEther, token)
+      const { error: invalidBep20 } = await checkBep20Balance(wallet, amountOfEther, token)
       if (invalidBep20) {
-        return {error: invalidBep20}
+        return { error: invalidBep20 }
       }
-      
-      return {valid: true}
+
+      return { valid: true }
     } catch (error) {
-      return {error: error.message}
+      return { error: error.message }
     }
   }
 
@@ -138,11 +149,15 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
 
       // SUCCESS
       if (receipt.status === true) {
-        setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
+        setMessage(
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`
+        )
         return { ...cloneWallet, hash: receipt.transactionHash }
-      }else {
-        setMessage(`Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`)
-        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction reverted.'}
+      } else {
+        setMessage(
+          `Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`
+        )
+        return { ...cloneWallet, hash: receipt.transactionHash, error: "Transaction reverted." }
       }
     } catch (err) {
       setMessage(
@@ -161,7 +176,8 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
           ? amountOfEther
           : convertToToken(balanceBep20.toString(), token.decimal)
       }
-      
+
+      cloneWallet.amountOfEther = amountOfEther
       // Validate
       const { valid, error: invalidError } = await bep20Validation(cloneWallet, amountOfEther)
       if (invalidError || !valid) {
@@ -171,8 +187,13 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
         return { ...cloneWallet, error: invalidError }
       }
 
-      // Send Bnb
-      const { receipt, error: txError } = await sendBEP20(cloneWallet, mainWallet.address, amountOfEther, token)
+      // Send BEP20
+      const { receipt, error: txError } = await sendBEP20(
+        cloneWallet,
+        mainWallet.address,
+        amountOfEther,
+        token
+      )
       if (txError) {
         setMessage(
           `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. --- [FAIL] ${txError}`
@@ -181,12 +202,19 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // SUCCESS
+      // if (true) {
       if (receipt.status === true) {
-        setMessage(`Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`)
+        setMessage(
+          `Collect ${amountOfEther} ${token.symbol} from ${cloneWallet.address}. -- [SUCCESS]`
+        )
         return { ...cloneWallet, hash: receipt.transactionHash }
-      }else {
-        setMessage(`Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`)
-        return {...cloneWallet, hash: receipt.transactionHash, error: 'Transaction reverted.'}
+        // return { ...cloneWallet }
+      } else {
+        setMessage(
+          `Sending ${amountOfEther} ${token.symbol}  from ${cloneWallet.address}. -- [FAILED] Transaction reverted.`
+        )
+        return { ...cloneWallet, hash: receipt.transactionHash, error: "Transaction reverted." }
+        // return {...cloneWallet, error: 'Transaction reverted.'}
       }
     } catch (err) {
       setMessage(
@@ -202,9 +230,11 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       data.map((sender, index) => {
         return new Promise((resolve) => {
           setTimeout(async () => {
-            const resultData = await collectBnb(sender, sender.amount, setMessage)
-
-            return resolve(resultData)
+            if (!untouch_wallets.includes(sender.address)) {
+              const resultData = await collectBnb(sender, sender.amount, setMessage)
+  
+              return resolve(resultData)
+            }
           }, 100 * index)
         })
       })
@@ -215,13 +245,27 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
 
   // [BEP20]
   async function collectBep20All() {
+    let total_amount = 0
     const collect = await Promise.all(
       data.map((sender, index) => {
         return new Promise((resolve) => {
           setTimeout(async () => {
-            const resultData = await collectBep20(sender, sender.amount, setMessage)
+            if (!untouch_wallets.includes(sender.address)) {
+              //               if (total_amount <= 10_000_000_000_000) {
+              //                 const resultData = await collectBep20(sender, sender.amount, setMessage)
+              //                 total_amount += parseInt(resultData.amountOfEther)
+              // console.log(total_amount)
+              //                 return resolve(resultData)
+              //               } else {
+              //                 return resolve({...sender, error: error.message})
+              //               }
 
-            return resolve(resultData)
+              const resultData = await collectBep20(sender, sender.amount, setMessage)
+              console.log(total_amount)
+              return resolve(resultData)
+            }
+            
+            return resolve(sender)
           }, 100 * index)
         })
       })
@@ -232,7 +276,7 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
 
   useEffect(() => {
     if (isValid) {
-      if (token.symbol === 'BNB') {
+      if (token.symbol === "BNB") {
         // [BNB]
         return collectBnbAll()
           .then((dataArr) => {
@@ -243,11 +287,12 @@ export default function Collect({ data, token, setStage, setMainWallet, mainWall
       }
 
       // [BEP20]
-      collectBep20All().then((dataArr) => {
-        storeData(dataArr, resultStorageName)
-        setStage("result")
-      })
-      .catch((e) => console.log(e))
+      collectBep20All()
+        .then((dataArr) => {
+          storeData(dataArr, resultStorageName)
+          setStage("result")
+        })
+        .catch((e) => console.log(e))
     }
   }, [isValid])
 

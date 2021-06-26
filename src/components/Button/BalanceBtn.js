@@ -1,8 +1,7 @@
 import {MdAccountBalanceWallet} from 'react-icons/md'
 import DropdownBtn from './DropdownBtn'
-import {DPC, SLC, BNB, WBNB} from '../../constant/BEP20'
 
-export default function BalanceBtn({token, setToken, handler}) {
+export default function BalanceBtn({token, setToken, handler, list_of_tokens}) {
   return (
     <div className="btn-group mr-2">
     <button 
@@ -14,7 +13,7 @@ export default function BalanceBtn({token, setToken, handler}) {
     </button>
 
     <DropdownBtn
-      items={[BNB, DPC, SLC, WBNB]}
+      items={list_of_tokens}
       token={token}
       setToken={setToken}
       handler={handler} 

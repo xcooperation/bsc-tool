@@ -39,7 +39,7 @@ export default function Result({setStage}) {
   // handle cancel
   const handleCancel = function() {
     removeData(swapResultStorageName)
-    setStage('generate')
+    setStage('input')
   }
 
   return (

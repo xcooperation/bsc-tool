@@ -28,14 +28,16 @@ export default function Input({ data, setData, pair, setPair, setStage}) {
     e.preventDefault()
     const { wallet_pk_inp } = e.target.elements
     const wallet_pk = wallet_pk_inp.value
-
-    if (wallet_pk) {
+    
+    if (wallet_pk.toString()) {
       try {
         const {wallet} = await getWalletByPK(wallet_pk)
-        storeData([wallet])
-        setData([wallet])
-        setDropped(true)
-        return
+        if (wallet) {
+          storeData([wallet])
+          setData([wallet])
+          setDropped(true)
+          return
+        }
       } catch (error) {
         setError(error.message)
       }

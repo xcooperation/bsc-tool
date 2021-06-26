@@ -89,7 +89,7 @@ export default function SwapForm({
             {selectedFrom && (
               <>
                 <div className="form-group">
-                  <div className="mt-3">
+                  {/* <div className="mt-3">
                     <div className="input-group-prepend">
                       <div className="input-group-text mr-2">Amount</div>
                       <input
@@ -102,7 +102,7 @@ export default function SwapForm({
                         onChange={(e) => setAmount(parseFloat(e.target.value))}
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="mt-3">
                     <div className="d-flex flex-column">
